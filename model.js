@@ -1,25 +1,5 @@
-/**
- * Alle ændringer der skal foretages skal registreres før vi ændrer noget.
- *
- * Vi laver et nyt grid til næste generation,
- * og erstatter det gamle grid med dette grid når den er færdig med at processe hvad der skal fjernes
- *
- * currentGen = grid
- * nextGen = currentGen
- *
- * for rows of currentGen {
- *  for cols of currentGen {
- *      nbrs = countNeighbors(row, col)
- *      if nbrs < 2 || nbrs > 3: newVal = 0
- *      if nbrs == 2: newVal = val
- *      if nbrs == 3: newVal = 1
- *      nextGen.setCellValue(newVal, row, col)
- *  }
- * }
- */
-
 export class Grid {
-  grid;
+  grid = [];
   rowNum;
   colNum;
 
@@ -40,30 +20,138 @@ export class Grid {
     this.colNum = colNum;
   }
 
-  getCellContent(row, col) {
-    if (this.grid[row] === undefined) return;
-    return this.grid[row][col];
+  random() {
+    for (let r = 0; r < this.rowNum; r++) {
+      for (let c = 0; c < this.colNum; c++) {
+        if (Math.random() < 0.05) {
+          this.set(r, c, 1);
+        }
+      }
+    }
   }
 
-  getIndexContent(i) {
-    const [row, col] = this.getRowAndColFromIndex(i);
-    return this.getCellContent(row, col);
+  set(row, col, value) {
+    const { r, c, v } = this.getRowColAndValue(row, col, value);
+    if (this.grid[r]) {
+      this.grid[r][c] = v;
+    }
   }
 
-  writeToIndex(element, i) {
-    const [row, col] = this.getRowAndColFromIndex(i);
-    this.writeToCell(element, row, col);
+  get(row, col) {
+    const { r, c } = this.getRowCol(row, col);
+    return this.grid[r]?.[c];
   }
 
-  writeToCell(element, row, col) {
-    console.log(element, row, col);
-    this.grid[row][col] = element;
+  indexFor(row, col) {
+    const { r, c } = this.getRowCol(row, col);
+    if (r < 0 || r >= this.rowNum || c < 0 || c >= this.colNum) {
+      return -1;
+    }
+    return r * this.colNum + c;
   }
 
-  getRowAndColFromIndex(i) {
+  rowColFor(i) {
     const col = i % this.colNum;
-    const row = Math.floor(i / this.rowNum);
-    return [row, col];
+    const row = Math.floor(i / this.colNum);
+    return { col, row };
+  }
+
+  neighbours(row, col) {
+    const { r, c } = this.getRowCol(row, col);
+    const neighbours = [];
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        if (
+          r + i < this.colNum &&
+          c + j < this.rowNum &&
+          !(i === 0 && j === 0)
+        ) {
+          neighbours.push({ row: r + i, col: c + j });
+        }
+      }
+    }
+    return neighbours;
+  }
+
+  neighbourValues(row, col) {
+    const { r, c } = this.getRowCol(row, col);
+    const neighbours = [];
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        if (this.grid[r + i]?.[c + j] && !(i === 0 && j === 0)) {
+          neighbours.push(this.grid[r + i][c + j]);
+        }
+      }
+    }
+    return neighbours;
+  }
+
+  nextInRow(row, col) {
+    const { r, c } = this.getRowCol(row, col);
+    return this.grid[r]?.[c + 1];
+  }
+
+  nextInCol(row, col) {
+    const { r, c } = this.getRowCol(row, col);
+    return this.grid[r + 1]?.[c];
+  }
+
+  north(row, col) {
+    const { r, c } = this.getRowCol(row, col);
+    return this.grid[r - 1]?.[c];
+  }
+
+  south(row, col) {
+    return this.nextInCol(row, col);
+  }
+
+  west(row, col) {
+    const { r, c } = this.getRowCol(row, col);
+    return this.grid[r]?.[c - 1];
+  }
+
+  east(row, col) {
+    return this.nextInRow(row, col);
+  }
+
+  rows() {
+    return this.rowNum;
+  }
+
+  cols() {
+    return this.colNum;
+  }
+
+  size() {
+    return this.rowNum * this.colNum;
+  }
+
+  fill(value) {
+    for (let r = 0; r < this.rowNum; r++) {
+      for (let c = 0; c < this.colNum; c++) {
+        this.grid[r][c] = value;
+      }
+    }
+  }
+
+  getRowColAndValue(row, col, value) {
+    // if value is undefined we assume it is called with ({row, col}, value)
+    if (value === undefined) {
+      const obj = row;
+      value = col;
+      col = obj.col;
+      row = obj.row;
+    }
+    return { r: row, c: col, v: value };
+  }
+
+  getRowCol(row, col) {
+    if (col === undefined) {
+      const obj = row;
+      col = obj.col;
+      row = obj.row;
+    }
+    return { r: row, c: col };
   }
 
   clear() {
